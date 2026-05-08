@@ -1,0 +1,54 @@
+/* 網格容器 */
+.grid-container {
+    display: grid;
+    grid-template-columns: 7fr 3fr;   
+    width: 100%;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* 網格項目 */
+.grid-item {
+    height: auto;
+}
+
+/* 特定欄的內邊距 */
+.left-column {
+    padding: 0px;
+    /* 左欄的內邊距 */
+}
+
+.middle-column,
+.right-column {
+    padding: 0px;
+    /* 中欄的內邊距 */
+}
+
+/* 響應式樣式 */
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+        /* 在手機上垂直堆疊 */
+    }
+
+    .grid-item {
+        min-height: auto;
+        /* 在手機上重置最小高度 */
+    }
+
+    .left-column {
+        padding: 10px;
+        /* 手機上的內邊距調整 */
+    }
+
+    .middle-column {
+        padding: 8px;
+        /* 手機上的內邊距調整 */
+    }
+
+    .right-column {
+        min-height: 100px;
+        /* 手機上側邊欄的最小高度 */
+    }
+}
+

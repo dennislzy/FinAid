@@ -1,0 +1,136 @@
+/* 確保 Quill 編輯器內容正確顯示 */
+.ql-editor {
+  min-height: 200px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap; /* 保留空白和換行 */
+}
+
+/* 修復中文字體顯示問題 */
+.ql-editor p,
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6,
+.ql-editor li {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "微軟正黑體", "SimHei", "黑體",
+    sans-serif;
+}
+
+/* 標題樣式 */
+.ql-editor h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+  color: #222;
+}
+
+.ql-editor h2 {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+  color: #333;
+}
+
+.ql-editor h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+  color: #333;
+}
+
+.ql-editor h4 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+  color: #444;
+}
+
+.ql-editor h5 {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+  color: #555;
+}
+
+.ql-editor h6 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 0.5em;
+  margin-bottom: 0.75em;
+  color: #666;
+}
+
+/* 強調文字樣式 */
+.ql-editor strong {
+  font-weight: bold;
+  color: #000;
+}
+
+.ql-editor em {
+  font-style: italic;
+  color: #555;
+}
+
+/* 確保內容區域正確顯示 */
+.ql-container {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/* 修復編輯器工具列樣式 */
+.ql-toolbar {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+/* 確保內容區域中的換行正確顯示 */
+.ql-editor p {
+  margin-bottom: 1em;
+}
+
+/* 修復列表樣式 */
+.ql-editor ul,
+.ql-editor ol {
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.ql-editor li {
+  margin-bottom: 0.5em;
+}
+
+/* 確保換行在編輯模式中正確顯示 */
+.ql-editor br {
+  display: block;
+  content: "";
+  margin-top: 0.5em;
+}
+
+/* 顏色選擇器樣式優化 */
+.ql-color .ql-picker-options {
+  padding: 3px 5px;
+  width: 152px;
+}
+
+.ql-color .ql-picker-item {
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+  border-radius: 3px;
+}
+
+/* 顏色選擇器懸停效果 */
+.ql-color .ql-picker-item:hover {
+  border: 1px solid #000;
+}
+

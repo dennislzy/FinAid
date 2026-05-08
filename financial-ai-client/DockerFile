@@ -1,0 +1,33 @@
+# frontend/Dockerfile
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 先裝 musl 相容套件
+RUN apk add --no-cache libc6-compat
+
+COPY package.json package-lock.json ./
+
+# 在容器內重新安裝（這樣才會裝 musl 版的 SWC）
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ---- 執行階段 ----
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN apk add --no-cache libc6-compat
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
