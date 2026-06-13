@@ -1,9 +1,7 @@
 package org.financial.financialaibackend.Controller;
 
-import java.io.IOException;
 import java.util.Map;
 
-import org.financial.financialaibackend.service.S3Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,12 +10,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.jsonwebtoken.io.IOException;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
-public class TestController {
+public class FileController {
 
     private final S3Service s3Service;
 
