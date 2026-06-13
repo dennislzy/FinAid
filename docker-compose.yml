@@ -37,6 +37,8 @@ services:
       - SPRING_FILE_PATH_FILES=/app/uploads   # ← 加這行
       - SPRING_FILE_PATH_AUDIOS=/app/audios   # ← 加這行
       - SPRING_JPA_HIBERNATE_NAMING_PHYSICAL_STRATEGY=org.financial.financialaibackend.config.Jpa.JpaConfig  # ← 這行還沒加
+      - SPRING_CLOUD_AWS_REGION_STATIC=us-east-1
+      - SPRING_CLOUD_AWS_S3_BUCKET=finaid-bucket
     volumes:
       - ./files:/app/files
       - ./audios:/app/audios
