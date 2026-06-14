@@ -17,10 +17,15 @@ public class S3Service {
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
-    public String upload(MultipartFile file) throws  java.io.IOException {
-        String key = "uploads/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+    @Value("${spring.cloud.aws.region}")
+    private String region;
+
+    public String upload(MultipartFile file,String folderName,String fileName) throws java.io.IOException {
+        String key = folderName + "/" + fileName;
         s3Template.upload(bucket, key, file.getInputStream());
-        return key;
+        
+        // 回傳完整 S3 URL
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
     }
 
     public void delete(String key) {

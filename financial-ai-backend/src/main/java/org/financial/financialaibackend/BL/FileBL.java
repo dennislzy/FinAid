@@ -29,6 +29,7 @@ import org.financial.financialaibackend.Repository.CaseInfoRepository;
 import org.financial.financialaibackend.Repository.FileRepository;
 import org.financial.financialaibackend.Utils.EntityModelMapper;
 import org.financial.financialaibackend.Utils.FileUtils;
+import org.financial.financialaibackend.service.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -40,11 +41,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class FileBL {
 
     @Value("${file.upload.dir:${user.dir}/src/main/resources/static/files}")
@@ -61,18 +64,12 @@ public class FileBL {
 
     private final String baseUrl = "http://localhost:8080/";
 
-
-    @Autowired
-    private FileRepository fileRepository; // 這裡是新增的注入 (FileRepository)
-
-    @Autowired
-    private CaseInfoRepository caseInfoRepository; // 這裡也是新增的
-
-    @Autowired
-    private EntityModelMapper entityModelMapper;
-
-    @Autowired
-    private ExecutorService executorService;
+    private final S3Service s3Service;
+    private final FileRepository fileRepository;
+    private final CaseInfoRepository caseInfoRepository;
+    private final EntityModelMapper entityModelMapper;
+    private final ExecutorService executorService;
+    
 
     private final WebClient webClient=WebClient.create();
 
@@ -191,45 +188,17 @@ public class FileBL {
 
     public String uploadFile(MultipartFile file, String caseInfoId) {
         boolean checkIsAudio = FileUtils.checkIsAudio(file);
-        Path uploadPath;
-        String folderName;
-        if (checkIsAudio) {
-            uploadPath = FileUtils.checkDirectories(audioUploadDir);
-            folderName = "audios";
-        } else {
-            uploadPath = FileUtils.checkDirectories(fileUploadDir);
-            folderName = "files";
+        String folderName = checkIsAudio ? "audios" : "files";
+
+        String originalFilename = file.getOriginalFilename();
+        String newFileName = caseInfoId + originalFilename;
+
+        if (checkIsAudio && !newFileName.toLowerCase().endsWith(".m4a")) {
+            newFileName += ".m4a";
         }
 
         try {
-            // 获取原始文件名
-            String originalFilename = file.getOriginalFilename();
-            
-            // 按照新的命名逻辑生成文件名：caseInfoId + 文件名
-            String newFileName = caseInfoId + originalFilename;
-            
-            // 对于音频文件，确保有.m4a扩展名
-            if (checkIsAudio && !newFileName.toLowerCase().endsWith(".m4a")) {
-                newFileName += ".m4a";
-            }
-            
-            Path targetLocation = uploadPath.resolve(newFileName);
-
-            // 检查文件是否已存在
-            if (Files.exists(targetLocation)) {
-                try {
-                    Files.delete(targetLocation);
-                } catch (IOException e) {
-                    throw new RuntimeException("刪除舊檔案失敗: " + e.getMessage());
-                }
-            }
-
-            // 保存新文件
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            // 构建URL
-            return baseUrl + folderName + "/" + newFileName;
-
+            return s3Service.upload(file, folderName, newFileName);
         } catch (IOException e) {
             throw new RuntimeException("文件上傳失敗: " + e.getMessage());
         }
