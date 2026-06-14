@@ -190,12 +190,17 @@ public class FileBL {
         boolean checkIsAudio = FileUtils.checkIsAudio(file);
         String folderName = checkIsAudio ? "audios" : "files";
 
+        // 取副檔名
         String originalFilename = file.getOriginalFilename();
-        String newFileName = caseInfoId + originalFilename;
+        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
 
-        if (checkIsAudio && !newFileName.toLowerCase().endsWith(".m4a")) {
-            newFileName += ".m4a";
+        // 音頻固定 .m4a
+        if (checkIsAudio) {
+            extension = ".m4a";
         }
+
+        // key 固定用 caseInfoId，更新時自動覆蓋
+        String newFileName = caseInfoId + extension;
 
         try {
             return s3Service.upload(file, folderName, newFileName);
