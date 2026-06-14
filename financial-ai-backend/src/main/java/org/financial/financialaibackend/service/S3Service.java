@@ -17,7 +17,7 @@ public class S3Service {
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
-    @Value("${spring.cloud.aws.region}")
+    @Value("${spring.cloud.aws.region.static}") 
     private String region;
 
     public String upload(MultipartFile file,String folderName,String fileName) throws java.io.IOException {
