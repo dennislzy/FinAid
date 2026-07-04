@@ -24,13 +24,18 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Install torch and whisper with CPU support
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
-    && pip install numba \
-    && pip install openai-whisper --no-deps
+# ⚠️ 暫時註解掉 - 這些套件（尤其是 torch）體積龐大，導致 EBS 空間不足 (no space left on device)
+# 待磁碟空間擴充後再打開，或評估是否真的需要 whisper 語音辨識功能
+# RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
+#     && pip install numba \
+#     && pip install openai-whisper --no-deps
 
-RUN mkdir -p /app/whisper_models /app/faiss_db /app/aiData \
-    && chmod 777 /app/whisper_models /app/faiss_db /app/aiData
+# RUN mkdir -p /app/whisper_models /app/faiss_db /app/aiData \
+#     && chmod 777 /app/whisper_models /app/faiss_db /app/aiData
 
+# 保留 faiss_db、aiData 資料夾建立（這兩個跟 whisper 無關，AI 服務其他功能可能還需要用到）
+RUN mkdir -p /app/faiss_db /app/aiData \
+    && chmod 777 /app/faiss_db /app/aiData
 
 # Copy project files
 COPY . .
@@ -42,7 +47,6 @@ RUN addgroup --system fastapi \
 
 # Switch to non-root user
 USER fastapi
-
 
 # Expose port
 EXPOSE 7000
