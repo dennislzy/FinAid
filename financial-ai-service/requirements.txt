@@ -23,7 +23,7 @@ faiss-cpu
 python-multipart
 
 # Data Processing
-# pandas
+pandas
 
 # Additional Tools
 # openai-whisper[cpu]
