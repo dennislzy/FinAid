@@ -4,13 +4,15 @@ import org.financial.financialaibackend.Dto.QuestionRequest;
 import org.financial.financialaibackend.Dto.chat.ChatResponse;
 import org.financial.financialaibackend.Dto.chat.Riskment;
 import org.financial.financialaibackend.Dto.common.Message;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
 public class ChatBL {
 
-    private final String baseUrl = "http://localhost:7000/api/ai";
+    @Value("${ai.service.url:http://localhost:7000/api/ai}")
+    private String baseUrl;
 
     private final WebClient webClient=WebClient.create();
     

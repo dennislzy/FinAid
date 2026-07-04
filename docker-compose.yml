@@ -39,6 +39,7 @@ services:
       - SPRING_JPA_HIBERNATE_NAMING_PHYSICAL_STRATEGY=org.financial.financialaibackend.config.Jpa.JpaConfig  # ← 這行還沒加
       - SPRING_CLOUD_AWS_REGION_STATIC=us-east-1
       - SPRING_CLOUD_AWS_S3_BUCKET=finaid-bucket
+      - AI_SERVICE_URL=http://ai:7000/api/ai    # ← 新增這行
     volumes:
       - ./files:/app/files
       - ./audios:/app/audios
