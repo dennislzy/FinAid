@@ -1,0 +1,30 @@
+# FastAPI Core
+fastapi
+uvicorn
+pydantic
+typer
+
+# LangChain Core
+langchain
+langchain-community
+langchain-core
+langchain-openai
+
+# LangGraph
+langgraph
+openai
+requests
+typing_extensions
+langchain-text-splitters
+
+# Vector Database
+faiss-cpu
+
+python-multipart
+
+# Data Processing
+# pandas
+
+# Additional Tools
+# openai-whisper[cpu]
+# qdrant-client

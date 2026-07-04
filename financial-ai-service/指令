@@ -1,0 +1,11 @@
+uvicorn main:app --reload --workers 1 --port 7000
+
+構建映像檔
+docker build -t financial-ai-service .
+
+run 程序
+docker run -p 7000:7000 financial-ai-service
+
+pip install rank_bm25
+
+pip install jq

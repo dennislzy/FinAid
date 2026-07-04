@@ -45,6 +45,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  ai:
+    build:
+      context: ./financial-ai-service
+      dockerfile: DockerFile
+    expose:
+      - "7000"
+    environment:
+      - OPEN_AI_KEY=${OPEN_AI_KEY}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=financial_springboot
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
     image: mysql:8.0
