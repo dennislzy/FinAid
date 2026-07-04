@@ -2,10 +2,16 @@ import pandas as pd
 from sqlalchemy import create_engine
 from datetime import datetime
 import math
+import os
 # from config import password
 
-# # 連接資料庫
-engine = create_engine(f"mysql+pymysql://root:@localhost:3306/financial_springboot")
+db_user = os.getenv("DB_USERNAME")
+db_password = os.getenv("DB_PASSWORD")
+db_host = os.getenv("DB_HOST")
+db_port = os.getenv("DB_PORT")
+db_name = os.getenv("DB_NAME")
+
+engine = create_engine(f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}")
 
 def generate_case_summary(case_info_id)->str:
     """
