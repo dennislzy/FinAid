@@ -20,6 +20,10 @@ langchain-text-splitters
 # Vector Database
 faiss-cpu
 
+# Database
+sqlalchemy
+pymysql
+
 python-multipart
 
 # Data Processing
