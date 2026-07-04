@@ -152,6 +152,7 @@ def generate_case_summary(case_info_id)->str:
     assets = 0
     debt =0
     total_month_records=0
+    count = 0
     if not year_records.empty:
         summary += "\n2024年度財務記錄:\n"
         total_year_income_records =0
