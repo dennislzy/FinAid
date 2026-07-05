@@ -5,6 +5,7 @@ FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app
 
+
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
@@ -15,6 +16,9 @@ RUN mvn package -DskipTests
 FROM eclipse-temurin:21-jre-alpine AS runner
 
 WORKDIR /app
+
+# 安裝 ffmpeg (包含 ffprobe),音頻切割功能需要
+RUN apk add --no-cache ffmpeg
 
 COPY --from=builder /app/target/*.jar app.jar
 
