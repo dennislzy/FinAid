@@ -22,6 +22,8 @@ import org.financial.financialaibackend.Utils.AttributeCheck;
 import org.financial.financialaibackend.Utils.EntityModelMapper;
 import org.financial.financialaibackend.Utils.UUIDGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -53,6 +55,7 @@ public class CaseInfoBL {
     
     
     //查詢單一個案資料
+    @Cacheable(value = "caseInfo", key = "#caseInfoId")
     public CaseInfo findCaseInfoById(String caseInfoId) {
     
         // 查詢資料庫是否存在該個案
@@ -61,7 +64,7 @@ public class CaseInfoBL {
 
     }
 
-
+    @Cacheable(value = "caseList", key = "#socialWorkerEmail + '-' + #keyword")
     public List<CaseInfo> findAllCases(String socialWorkerEmail, String keyword) {
         if (keyword != null && !keyword.trim().isEmpty()) {
             return caseInfoRepository.findBySocialWorker_SocialWorkerEmailAndCaseInfoNameContainingIgnoreCase(
@@ -72,10 +75,9 @@ public class CaseInfoBL {
         }
     }
     
-    
-    
 
     //新增caseInfo
+
     public CaseInfo insert(CaseInfo caseInfo, String socialWorkerEmail){
         //設置主鍵
         final String caseInfoId= UUIDGenerator.generateUUID();
@@ -105,6 +107,7 @@ public class CaseInfoBL {
     }
 
     //刪除caseInfo
+    @CacheEvict(value = {"caseInfo", "caseList"}, allEntries = true)
     public Message deleteCaseInfoIdList(List<String> idList) throws IOException {
         List<String> fileUrlList=new ArrayList<>();
         idList.forEach(id->{
@@ -127,6 +130,7 @@ public class CaseInfoBL {
     }
 
     //更新caseInfo
+    @CacheEvict(value = {"caseInfo", "caseList"}, allEntries = true)
     public CaseInfo updateCaseInfoById(String caseInfoId, CaseInfoUpdateRequest caseInfoUpdateRequest){
         if (AttributeCheck.notNull(caseInfoUpdateRequest)){
             Optional<CaseInfo> caseInfoOptional = caseInfoRepository.findByCaseInfoId(caseInfoId);

@@ -40,6 +40,9 @@ services:
       - SPRING_CLOUD_AWS_REGION_STATIC=us-east-1
       - SPRING_CLOUD_AWS_S3_BUCKET=finaid-bucket
       - AI_SERVICE_URL=http://ai:7000/api/ai    # ← 新增這行
+      - SPRING_DATA_REDIS_HOST=redis          # ← 新增
+      - SPRING_DATA_REDIS_PORT=6379           # ← 新增
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD}   # ← 新增
     volumes:
       - ./files:/app/files
       - ./audios:/app/audios
@@ -62,6 +65,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db:
     image: mysql:8.0
