@@ -93,9 +93,9 @@ public class CaseInfo {
     @Column(name = "caseInfoCareer")
     public String caseInfoCareer;
 
-    @Column(name = "caseInfoCreateTime", updatable = false) // updatable = false 代表時間不能被更新
+    @Column(name = "caseInfoCreateTime", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd") 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
     public OffsetDateTime caseInfoCreateTime;
 
     @Column(name = "isIndigenousOrNewResident")
