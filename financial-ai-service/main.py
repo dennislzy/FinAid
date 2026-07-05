@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import FastAPI, UploadFile
 from fastapi.params import File
 from fastapi.responses import JSONResponse
-# from  controller import audioAndSummaryController
+from  controller import audioAndSummaryController
 # from controller import ChatController
 # from controller import testController
 from controller import AIController
@@ -17,7 +17,7 @@ async def root():
     return {"message": "歡迎使用 FastAPI"}
 
 
-# app.include_router(audioAndSummaryController.router)
+app.include_router(audioAndSummaryController.router)
 # app.include_router(ChatController.router)
 # app.include_router(testController.router)
 app.include_router(AIController.router)
