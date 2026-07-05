@@ -7,99 +7,112 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class AudioSplitService {
     
     // 支援的音訊格式列表
     private static final List<String> SUPPORTED_FORMATS = List.of(
         "m4a", "mp3", "wav", "ogg", "flac", "aac", "wma"
     );
+    private final ExecutorService executorService;
 
-    public CompletableFuture<List<byte[]>> splitAudioFileWithFFmpegAsync(byte[] fileBytes, String originalFileName, int segmentDurationSeconds) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                // 獲取原始檔案的副檔名
-                String extension = getFileExtension(originalFileName).toLowerCase();
-                if (!SUPPORTED_FORMATS.contains(extension)) {
-                    throw new IllegalArgumentException("不支援的音訊格式: " + extension);
-                }
+    public List<byte[]> splitAudioFileWithFFmpeg(byte[] fileBytes, String originalFileName, int segmentDurationSeconds) {
+        String extension = getFileExtension(originalFileName).toLowerCase();
+        if (!SUPPORTED_FORMATS.contains(extension)) {
+            throw new IllegalArgumentException("不支援的音訊格式: " + extension);
+        }
 
-                // 1. 創建臨時輸入文件（使用原始副檔名）
-                java.io.File tempInputFile = java.io.File.createTempFile("audio_input", "." + extension);
-                try (FileOutputStream fos = new FileOutputStream(tempInputFile)) {
-                    fos.write(fileBytes);
-                }
+        java.io.File tempInputFile = null;
+        java.io.File outputDir = null;
 
-                // 2. 獲取音頻時長（異步）
-                CompletableFuture<Double> durationFuture = getDurationAsync(tempInputFile);
-                double totalDuration = durationFuture.get(5, TimeUnit.MINUTES);
-
-                // 3. 計算切割段數
-                int totalSegments = (int) Math.ceil(totalDuration / segmentDurationSeconds);
-                List<byte[]> chunks = new ArrayList<>(totalSegments);
-                
-                // 4. 創建輸出目錄
-                java.io.File outputDir = new java.io.File(tempInputFile.getParent(), "segments");
-                outputDir.mkdir();
-                
-                // 5. 執行FFmpeg切割（異步）
-                CompletableFuture<Void> ffmpegFuture = executeFFmpegAsync(
-                    tempInputFile, 
-                    outputDir,
-                    extension, 
-                    segmentDurationSeconds
-                );
-                ffmpegFuture.get(30, TimeUnit.MINUTES);
-
-                // 6. 收集並讀取切割後的片段
-                List<CompletableFuture<byte[]>> chunkFutures = new ArrayList<>();
-                for (int i = 0; i < totalSegments; i++) {
-                    final int index = i;
-                    CompletableFuture<byte[]> chunkFuture = CompletableFuture.supplyAsync(() -> {
-                        try {
-                            java.io.File segmentFile = new java.io.File(
-                                outputDir, 
-                                String.format("segment_%d.%s", index, extension)
-                            );
-                            if (!segmentFile.exists()) return null;
-                            
-                            byte[] data = Files.readAllBytes(segmentFile.toPath());
-                            segmentFile.delete();
-                            return data;
-                        } catch (IOException e) {
-                            throw new CompletionException(e);
-                        }
-                    });
-                    chunkFutures.add(chunkFuture);
-                }
-
-                // 7. 等待所有片段處理完成
-                CompletableFuture.allOf(chunkFutures.toArray(new CompletableFuture[0])).join();
-                
-                // 8. 收集結果
-                for (CompletableFuture<byte[]> future : chunkFutures) {
-                    byte[] chunk = future.join();
-                    if (chunk != null) {
-                        chunks.add(chunk);
-                    }
-                }
-
-                // 9. 清理臨時文件
-                tempInputFile.delete();
-                outputDir.delete();
-
-                return chunks;
-            } catch (Exception e) {
-                throw new CompletionException("音頻切割失敗", e);
+        try {
+            // 1. 創建臨時輸入文件
+            tempInputFile = java.io.File.createTempFile("audio_input", "." + extension);
+            try (FileOutputStream fos = new FileOutputStream(tempInputFile)) {
+                fos.write(fileBytes);
             }
-        });
+
+            // 2. 獲取音頻時長(反正已在背景執行緒,直接同步等待即可)
+            double totalDuration = getDurationAsync(tempInputFile).get(5, TimeUnit.MINUTES);
+
+            // 3. 計算切割段數
+            int totalSegments = (int) Math.ceil(totalDuration / segmentDurationSeconds);
+
+            // 4. 創建輸出目錄
+            outputDir = new java.io.File(tempInputFile.getParent(), "segments_" + UUID.randomUUID());
+            if (!outputDir.mkdir()) {
+                throw new IOException("無法建立暫存輸出目錄: " + outputDir.getAbsolutePath());
+            }
+
+            // 5. 執行FFmpeg切割
+            executeFFmpegAsync(tempInputFile, outputDir, extension, segmentDurationSeconds)
+                    .get(30, TimeUnit.MINUTES);
+
+            // 6. 平行讀取切割後的片段(I/O密集,值得平行化,且明確帶入指定的 executor)
+            List<CompletableFuture<byte[]>> chunkFutures = new ArrayList<>();
+            java.io.File finalOutputDir = outputDir;
+            for (int i = 0; i < totalSegments; i++) {
+                final int index = i;
+                CompletableFuture<byte[]> chunkFuture = CompletableFuture.supplyAsync(() -> {
+                    try {
+                        java.io.File segmentFile = new java.io.File(
+                                finalOutputDir, String.format("segment_%d.%s", index, extension));
+                        if (!segmentFile.exists()) return null;
+
+                        byte[] data = Files.readAllBytes(segmentFile.toPath());
+                        Files.deleteIfExists(segmentFile.toPath());
+                        return data;
+                    } catch (IOException e) {
+                        throw new CompletionException(e);
+                    }
+                }, executorService); // 明確指定,不再用預設 commonPool
+                chunkFutures.add(chunkFuture);
+            }
+
+            // 7. 等待所有片段讀取完成並收集結果
+            List<byte[]> chunks = new ArrayList<>(totalSegments);
+            for (CompletableFuture<byte[]> future : chunkFutures) {
+                byte[] chunk = future.join();
+                if (chunk != null) {
+                    chunks.add(chunk);
+                }
+            }
+
+            return chunks;
+
+        } catch (Exception e) {
+            throw new CompletionException("音頻切割失敗", e);
+        } finally {
+            // 無論成功或失敗,確保暫存檔案一定被清理
+            if (tempInputFile != null && tempInputFile.exists()) {
+                tempInputFile.delete();
+            }
+            if (outputDir != null && outputDir.exists()) {
+                deleteDirectoryQuietly(outputDir);
+            }
+        }
+    }
+
+    private void deleteDirectoryQuietly(java.io.File dir) {
+        java.io.File[] files = dir.listFiles();
+        if (files != null) {
+            for (java.io.File f : files) {
+                f.delete();
+            }
+        }
+        dir.delete();
     }
 
     private CompletableFuture<Double> getDurationAsync(java.io.File file) {

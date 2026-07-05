@@ -29,7 +29,7 @@ import org.financial.financialaibackend.Utils.AttributeCheck;
 import org.financial.financialaibackend.Utils.DateUtil;
 import org.financial.financialaibackend.Utils.EntityModelMapper;
 import org.financial.financialaibackend.service.AudioSplitService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.financial.financialaibackend.service.S3Service;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -42,51 +42,29 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
-
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class AIBL {
 
     private final WebClient webClient=WebClient.create();
 
     private final String baseUrl = "http://localhost:7000/api/ai";
-
-
-    @Autowired
-    private FileBL fileBL;
-    @Autowired
-    private CaseInfoBL caseInfoBL;
-
-    @Autowired
-    private StockPurchaseBL stockPurchaseBL;
-    @Autowired
-    private EntityModelMapper entityModelMapper;
-
-    @Autowired
-    private HouseholdYearFinancialRecordsBL householdYearFinancialRecordsBL;
-
-    @Autowired
-    private HouseholdMonthlyFinancialRecordsBL householdMonthlyFinancialRecordsBL;
-
-    @Autowired
-    private InsuranceListBL insuranceListBL;
-
-    @Autowired
-    private FundInvestBL fundInvestBL;
-
-    @Autowired
-    private BiddingRecordsBL aidAssociationBL;
-    @Autowired
-    private FileRepository fileRepository;
-
-    @Autowired
-    private ExecutorService executorService;
-
-    @Autowired
-    private AudioSplitService audioSplitService;
-
+    private final CaseInfoBL caseInfoBL;
+    private final StockPurchaseBL stockPurchaseBL;
+    private final EntityModelMapper entityModelMapper;
+    private final HouseholdYearFinancialRecordsBL householdYearFinancialRecordsBL;
+    private final HouseholdMonthlyFinancialRecordsBL householdMonthlyFinancialRecordsBL;
+    private final InsuranceListBL insuranceListBL;
+    private final FundInvestBL fundInvestBL;
+    private final BiddingRecordsBL aidAssociationBL;
+    private final FileRepository fileRepository;
+    private final ExecutorService executorService;
+    private final AudioSplitService audioSplitService;
+    private final S3Service s3Service;
 
     public String audioToText(MultipartFile file,byte[] fileBytes,String caseInfoId) throws IOException {
         ByteArrayResource resource = new ByteArrayResource(fileBytes) {
@@ -165,7 +143,7 @@ public class AIBL {
         
     
         // 2. 檔案上傳（這裡假設該方法不會影響原始文件的可讀性）
-        fileBL.uploadFile(file, caseInfoId);
+        s3Service.upload(file, "audios", caseInfoId);
 
         String formatTime = null;
         try {
@@ -198,78 +176,66 @@ public class AIBL {
     }
 
     private void processAudioAndSummary(File originalFile, MultipartFile file, byte[] fileBytes, String caseInfoId) {
+        final int SEGMENT_DURATION = 120;
+
         try {
-            // 1. 設置音頻分段時長（120秒）
-            int SEGMENT_DURATION = 120;
-            
-            // 2. 異步切割音頻
-            audioSplitService.splitAudioFileWithFFmpegAsync(fileBytes, file.getOriginalFilename(), SEGMENT_DURATION)
-                .thenAccept(chunks -> {
+            // 1. 切割音頻(同步等待完成)
+            List<byte[]> chunks = audioSplitService.splitAudioFileWithFFmpeg(
+                    fileBytes, file.getOriginalFilename(), SEGMENT_DURATION);
+
+            log.info("音檔切割完成, fileId={}, 共{}段", originalFile.getFileId(), chunks.size());
+
+            // 2. 平行轉文字(唯一值得平行化的步驟)
+            List<CompletableFuture<String>> transcriptionFutures = new ArrayList<>();
+            for (int i = 0; i < chunks.size(); i++) {
+                final int chunkIndex = i;
+                CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
                     try {
-                        // 3. 創建音頻轉文字的異步任務
-                        List<CompletableFuture<String>> transcriptionFutures = new ArrayList<>();
-                        
-                        for (int i = 0; i < chunks.size(); i++) {
-                            final int chunkIndex = i;
-                            CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
-                                try {
-                                    return audioToText(file, chunks.get(chunkIndex), caseInfoId);
-                                } catch (IOException e) {
-                                    throw new CompletionException(e);
-                                }
-                            }, executorService);
-                            transcriptionFutures.add(future);
-                        }
-
-                        // 4. 等待所有轉錄完成並合併文本
-                        StringBuilder fullText = new StringBuilder();
-                        CompletableFuture.allOf(transcriptionFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> {
-                                // 按順序合併所有文本
-                                return transcriptionFutures.stream()
-                                    .map(CompletableFuture::join)
-                                    .collect(Collectors.joining("\n"));
-                            })
-                            .thenCompose(finalText -> {
-                                fullText.append(finalText);  // 保存完整文本
-                                // 5. 新增：為文本添加標點符號
-                                return CompletableFuture.supplyAsync(() -> {
-                                    try {
-                                        return addPunctuation(fullText.toString());
-                                    } catch (Exception e) {
-                                        log.error("標點處理失敗: {}", e.getMessage());
-                                        return fullText.toString(); // 回退到原始文本
-                                    }
-                                }, executorService);
-                            })
-                            .thenCompose(punctuatedText -> {
-                                fullText.setLength(0); // 清空原始文本
-                                fullText.append(punctuatedText); // 更新為標點後文本
-                                // 6. 生成摘要
-                                return CompletableFuture.supplyAsync(
-                                    () -> summary(punctuatedText), 
-                                    executorService
-                                );
-                            })
-                            .thenAccept(summaryResult -> {
-                                // 7. 一次性更新最終結果
-                                updateFinalResult(originalFile, fullText.toString(), summaryResult);
-                            })
-                            .exceptionally(error -> {
-                                handleError(originalFile, error);
-                                return null;
-                            });
-
-                    } catch (Exception e) {
-                        handleError(originalFile, e);
+                        return audioToText(file, chunks.get(chunkIndex), caseInfoId);
+                    } catch (IOException e) {
+                        throw new CompletionException("第" + chunkIndex + "段轉文字失敗", e);
                     }
-                })
-                .exceptionally(error -> {
-                    handleError(originalFile, error);
-                    return null;
-                });
+                }, executorService);
+                transcriptionFutures.add(future);
+            }
+
+            // 3. 等待所有段落完成,按順序合併
+            String fullText;
+            try {
+                fullText = transcriptionFutures.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.joining("\n"));
+            } catch (CompletionException e) {
+                log.error("轉文字階段失敗, fileId={}", originalFile.getFileId(), e);
+                handleError(originalFile, e.getCause() != null ? e.getCause() : e);
+                return;
+            }
+
+            // 4. 加標點符號(失敗則退回原始文本,不中斷流程)
+            String punctuatedText;
+            try {
+                punctuatedText = addPunctuation(fullText);
+            } catch (Exception e) {
+                log.warn("標點處理失敗, fileId={}, 使用原始文本: {}", originalFile.getFileId(), e.getMessage());
+                punctuatedText = fullText;
+            }
+
+            // 5. 生成摘要
+            String summaryResult;
+            try {
+                summaryResult = summary(punctuatedText);
+            } catch (Exception e) {
+                log.error("摘要生成失敗, fileId={}", originalFile.getFileId(), e);
+                handleError(originalFile, e);
+                return;
+            }
+
+            // 6. 一次性更新最終結果
+            updateFinalResult(originalFile, punctuatedText, summaryResult);
+            log.info("音檔處理完成, fileId={}", originalFile.getFileId());
 
         } catch (Exception e) {
+            log.error("音檔處理發生未預期錯誤, fileId={}", originalFile.getFileId(), e);
             handleError(originalFile, e);
         }
     }

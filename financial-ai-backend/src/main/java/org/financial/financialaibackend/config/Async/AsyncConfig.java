@@ -10,7 +10,8 @@ import java.util.concurrent.Executors;
 public class AsyncConfig {
 
     @Bean(destroyMethod = "shutdown")
-    public ExecutorService executorService() {
-        return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    public ExecutorService audioProcessingExecutorService() {
+        // I/O 密集型(WebClient呼叫AI服務、FFmpeg切割),放寬執行緒數
+        return Executors.newFixedThreadPool(20);
     }
 }
