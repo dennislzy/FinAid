@@ -30,6 +30,7 @@ import org.financial.financialaibackend.Utils.DateUtil;
 import org.financial.financialaibackend.Utils.EntityModelMapper;
 import org.financial.financialaibackend.service.AudioSplitService;
 import org.financial.financialaibackend.service.S3Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -52,7 +53,8 @@ public class AIBL {
 
     private final WebClient webClient=WebClient.create();
 
-    private final String baseUrl = "http://localhost:7000/api/ai";
+    @Value("${ai.service.url:http://localhost:7000/api/ai}")
+    private String baseUrl;
     private final CaseInfoBL caseInfoBL;
     private final StockPurchaseBL stockPurchaseBL;
     private final EntityModelMapper entityModelMapper;
