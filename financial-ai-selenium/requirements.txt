@@ -1,0 +1,6 @@
+# requirements.txt 内容
+selenium~=4.29.0
+webdriver-manager==4.0.1
+pytest~=7.4.2
+
+requests~=2.31.0
