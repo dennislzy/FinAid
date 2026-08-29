@@ -63,6 +63,44 @@ Nginx (Reverse Proxy / CORS handling)
 
 ---
 
+## Automated Testing (Selenium)
+
+The project includes an automated end-to-end testing suite built with **Selenium WebDriver**, located in the `financial-ai-selenium` repository/module. The tests simulate real user interactions in the browser to verify that critical workflows behave correctly after each change.
+
+### Primary Test Scope: Case Management
+
+The main focus of the current test suite is the **Case Management** module, covering:
+
+- **Case Creation** — filling out and submitting the new case form, verifying required-field validation and successful save
+- **Case Listing & Search** — verifying that newly created cases appear in the case list and can be searched/filtered correctly
+- **Case Detail View** — checking that a case's profile, financial records, and investment/insurance details render correctly
+
+### Tech Stack
+
+- Selenium WebDriver
+- Test runner: *(e.g. PyTest / JUnit / TestNG — fill in based on your setup)*
+- Target browser: Chrome (via ChromeDriver)
+
+### Running the Tests
+
+```bash
+# 1. Enter the selenium test directory
+cd financial-ai-selenium
+
+# 2. Install dependencies
+# (fill in based on your language/framework, e.g. pip install -r requirements.txt)
+
+# 3. Make sure the application stack is running
+docker compose up -d --build
+
+# 4. Run the test suite
+# (fill in based on your test runner, e.g. pytest tests/case_management)
+```
+
+> Note: The Selenium tests currently prioritize Case Management flows as the core critical path. Coverage for Financial Visualization, Speech-to-Text, and AI Subsidy Search is planned for future iterations.
+
+---
+
 ## Quick Start
 
 ### Requirements
