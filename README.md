@@ -1,34 +1,35 @@
-# FinAid 智財幫
+# FinAid — Smart Case Management System for Financial Social Workers
 
-**專為財務社工設計的智能個案管理系統**，整合語音轉文字、AI 補助查詢與財務視覺化分析，協助社工高效服務弱勢個案。
-
----
-
-## 專案動機
-
-財務社工在服務弱勢個案時，需耗費大量時間在繁瑣的行政作業，包括手動查詢補助資訊、整理訪談紀錄、比對個案財務狀況等，導致無法將心力投注在更有價值的輔導工作上。
-
-FinAid 透過 **AI 語音轉文字**、**智能補助查詢機器人** 與 **財務圖表視覺化**，將過去需要數小時的作業縮短至數分鐘，讓社工回歸真正重要的事。
+**An intelligent case management system designed for financial social workers**, integrating speech-to-text, AI subsidy search, and financial data visualization to help social workers efficiently serve disadvantaged cases.
 
 ---
 
-## 功能特色
+## Project Motivation
 
-| 功能 | 說明 |
+Financial social workers spend a large amount of time on tedious administrative work when serving disadvantaged cases — manually looking up subsidy information, organizing interview records, and comparing cases' financial situations — which leaves little time for more valuable counseling work.
+
+FinAid uses **AI speech-to-text**, an **intelligent subsidy search bot**, and **financial chart visualization** to shrink tasks that used to take hours down to minutes, letting social workers refocus on what truly matters.
+
+---
+
+## Features
+
+| Feature | Description |
 |------|------|
-| 📋 個案管理 | 建立與管理個案基本資料、財務記錄、投資保險等明細 |
-| 📊 財務視覺化 | 月度／年度收支折線圖，快速掌握個案財務趨勢 |
-| 🎙️ 語音轉文字 | 上傳訪談錄音，自動生成逐字稿與摘要，支援 PDF 匯出 |
-| 🤖 AI 補助查詢 | 根據個案資料自動比對可申請的政府及民間補助 |
+| 📋 Case Management | Create and manage case profiles, financial records, and details on investments/insurance |
+| 📊 Financial Visualization | Monthly/yearly income-expense line charts for quickly understanding a case's financial trends |
+| 🎙️ Speech-to-Text | Upload interview recordings to automatically generate transcripts and summaries, with PDF export support |
+| 🤖 AI Subsidy Search | Automatically matches applicable government and private subsidies based on case data |
+
 ---
 
-## 技術架構
+## Technical Architecture
 
 ```
-瀏覽器
+Browser
   │
   ▼
-Nginx（反向代理 / 解決跨域）
+Nginx (Reverse Proxy / CORS handling)
   ├── /          →  Next.js     :3000
   ├── /api/      →  Spring Boot :8080
   └── /ai/       →  Python FastAPI :8000
@@ -37,68 +38,63 @@ Nginx（反向代理 / 解決跨域）
                        MySQL 8.0
 ```
 
-### 技術選型
+### Tech Stack
 
 **Frontend**
 - Next.js 14 / TypeScript
-- MUI（Material UI）
-- Recharts（財務圖表）
+- MUI (Material UI)
+- Recharts (financial charts)
 
 **Backend**
 - Java Spring Boot 3
-- Spring Security（JWT 驗證、BCrypt 加密）
+- Spring Security (JWT authentication, BCrypt encryption)
 - Spring Data JPA
 
 **AI Service**
 - Python / FastAPI
-- Whisper AI（語音轉文字，WER 8.6%）
-- LangChain + OpenAI+RAG（補助查詢機器人）
+- Whisper AI (speech-to-text, WER 8.6%)
+- LangChain + OpenAI + RAG (subsidy search bot)
 
 **Infrastructure**
 - MySQL 8.0
 - Docker / Docker Compose
-- Nginx（反向代理）
+- Nginx (reverse proxy)
 - AWS EC2
 
 ---
 
-## 快速開始
+## Quick Start
 
-### 環境需求
-
+### Requirements
 - Docker & Docker Compose
 
-### 啟動步驟
-
+### Setup Steps
 ```bash
-# 1. 複製專案
+# 1. Clone the project
 git clone https://github.com/your-username/FinAid.git
 cd FinAid
 
-# 2. 設定環境變數
+# 2. Configure environment variables
 cp .env.example .env
-# 編輯 .env，填入 MySQL 密碼
+# Edit .env and fill in the MySQL password
 
-# 3. 啟動所有服務
+# 3. Start all services
 docker compose up -d --build
 
-# 4. 開啟瀏覽器
+# 4. Open your browser
 # http://localhost:3000
 ```
 
-### 預設帳號
-
-| 帳號 | 密碼 | 角色 |
+### Default Account
+| Email | Password | Role |
 |------|------|------|
-| test5@gmail.com | 555 | 基層社工 |
+| test5@gmail.com | 555 | Frontline Social Worker |
 
 ---
 
----
+## Database Design
 
-## 資料庫設計
-
-共 13 張資料表，核心關聯如下：
+13 tables in total, with the core relationships as follows:
 
 ```
 social_worker
@@ -111,30 +107,32 @@ social_worker
             ├── fund_invest
             ├── bond_list
             ├── bidding_records
-            ├── file（語音檔與逐字稿）
+            ├── file (audio recordings and transcripts)
 ```
 
 ---
 
-## 專案亮點
+## Project Highlights
 
-- **解決真實問題**：和產學公司合作，訪談多位資深財務社工，以實際需求驅動開發
-- **全端開發**：前端、後端、AI 服務、資料庫設計、雲端部署一手包辦
-- **Whisper AI 整合**：評估 Whisper、AWS Transcribe、Microsoft Speech-to-Text 三種服務後，選用準確率最高（WER 8.6%）且成本最低的 Whisper AI
-- **容器化部署**：Docker Compose 管理多服務，Nginx 統一入口解決跨域問題
+- **Solving a real-world problem**: Developed in partnership with an industry company, driven by interviews with several experienced financial social workers to capture actual needs
+- **Full-stack development**: Handled frontend, backend, AI services, database design, and cloud deployment end-to-end
+- **Whisper AI integration**: Evaluated Whisper, AWS Transcribe, and Microsoft Speech-to-Text, and chose Whisper AI for its highest accuracy (WER 8.6%) at the lowest cost
+- **Containerized deployment**: Docker Compose manages multiple services, with Nginx as a unified entry point to solve CORS issues
 
 ---
-## 關於本專案
 
-本專案為資管系產學合作專題，與產學公司共同開發。
+## About This Project
 
-**本人負責範疇：**
-- 部分後端 API 開發（Spring Boot）
-- 雲端部署（AWS EC2 / Docker）
-- 資料庫設計
-- AI功能（語音轉文字，補助查詢機器人）整合
+This project is an industry-academia collaboration capstone project from the Department of Information Management, developed together with an industry partner.
+
+**My responsibilities:**
+- Partial backend API development (Spring Boot)
+- Cloud deployment (AWS EC2 / Docker)
+- Database design
+- AI feature integration (speech-to-text, subsidy search bot)
+
 ---
 
-## 授權
+## License
 
-本專案為學術用途，未經授權請勿商業使用。
+This project is for academic purposes only. Unauthorized commercial use is prohibited.
